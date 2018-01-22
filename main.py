@@ -91,7 +91,8 @@ bot.setBotPredicate("emotions", "I don't pay much attention to my feelings")
 bot.setBotPredicate("feelings"," I always put others before myself")
 
 def ask():
-	message = str(request.form['messageText'])
+	message = str(request.form['message'])
+	print message
 	if os.path.isfile("bot_brain.brn"):
 	    bot.bootstrap(brainFile = "bot_brain.brn")
 	else:
@@ -99,18 +100,18 @@ def ask():
 	    bot.saveBrain("bot_brain.brn")
 
 	# kernel now ready for use
-	while True:
-		if:
-			print bot.respond()
-		elif message == "quit" :
-			exit()
-		elif message == "save" :
-			bot.saveBrain("bot_brain.brn")
-		elif("what is" in message):
-			answer = web_search(message)
-			bot.respond(answer)
-		else :
-			print "the following query is not found, please try with other messages"
+	# while True:
+	# 	if(1):
+	# 		print bot.respond()
+	# 	elif message == "quit" :
+	# 		exit()
+	# 	elif message == "save" :
+	# 		bot.saveBrain("bot_brain.brn")
+	# 	elif("what is" in message):
+	# 		answer = web_search(message)
+	# 		bot.respond(answer)
+	# 	else :
+	# 		print "the following query is not found, please try with other messages"
 			
 if __name__ == "__main__":
     app.run(debug=False)
