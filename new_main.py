@@ -87,7 +87,7 @@ def scrape_and_parse(query):
     data = site.read()
     soup = BeautifulSoup(data, "html.parser")
 
-    my_list = soup.find("div", {"id": "links"}).find_all("div", {'class': re.compile('.*web-result*.')})[0:15]
+    my_list = soup.find("div", {"id": "links"}).find_all("div", {'class': re.compile('.*web-result*.')})[0:50]
 
     (result__snippet, result_url) = ([] for i in range(2))
 
@@ -101,7 +101,7 @@ def scrape_and_parse(query):
         except:
                 result_url.append(None)
 
-    final_result = '-'.join(result__snippet)
+    final_result = '\n'.join(result__snippet)
 
     return final_result         
 
@@ -110,14 +110,16 @@ def scrape_and_parse(query):
 
 def parse_message(answer):
     if("..." in answer):
-        answer = answer + "wait! Are you testing me?!?!"
-    if('http' in answer):
-        answer = "TBH i don't know...but i can give you a link....go find it there :)\n"+answer
+        result = answer + "wait! Are you testing me?!?!"
+    elif('http' in answer):
+        result = "TBH i don't know...but i can give you a link....go find it there :)\n"+answer
+    elif(answer == "save"):
+        bot.saveBrain("bot_brain.brn")
+        result = 'It is saved!'
     else:
-        answer = answer
-
-    result = bot.respond(answer)
-
+        result = bot.respond(answer)
+    
+    
     if ("I do not know" in result):
         parsed = str(answer.split('is')[1])
         parsed = parsed.split('?')[0]
