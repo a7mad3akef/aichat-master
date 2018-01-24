@@ -5,7 +5,7 @@
 
 # # print query('Python').type
 
-import wikipedia
+# import wikipedia
 # # print wikipedia.summary("bitcoin")
 # # result = wikipedia.page("bitcoin")
 # # print result.content
@@ -87,3 +87,50 @@ import wikipedia
 # parsed = parsed.split('?')[0]
 # parsed = parsed.replace(' ','')
 # print wikipedia.summary(parsed)
+
+# from duckduckpy import query
+
+# r = query("example")
+# for i in r.related_searches:
+#     if i.text:
+#         print i.text
+
+# import re, urllib
+# import pandas as pd
+# from bs4 import BeautifulSoup
+# from urllib import urlopen
+
+# import bs4 as bs
+# from urllib import request
+
+
+# # declare some needed variables
+# link = 'http://www.heart.co.uk/radio/last-played-songs/'
+# sauce = request.urlopen(link).read()
+# soup = bs.BeautifulSoup(sauce, 'lxml')
+
+# query = "Edinburg"
+# site = urlopen("http://duckduckgo.com/html/?q="+query)
+# data = site.read()
+# soup = BeautifulSoup(data, "html.parser")
+
+# # print(soup)
+# my_list = soup.find("div", {"id": "links"}).find_all("div", {'class': re.compile('.*web-result*.')})[0:15]
+
+
+# (result__snippet, result_url) = ([] for i in range(2))
+
+# for i in my_list:         
+#       try:
+#             result__snippet.append(i.find("a", {"class": "result__snippet"}).get_text().strip("\n").strip())
+#       except:
+#             result__snippet.append(None)
+#       try:
+#             result_url.append(i.find("a", {"class": "result__url"}).get_text().strip("\n").strip())
+#       except:
+#             result_url.append(None)
+
+# # print result__snippet
+# final_result = '-'.join(result__snippet)
+
+# print final_result

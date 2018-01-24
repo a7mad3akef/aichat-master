@@ -3,6 +3,10 @@ import aiml
 import os
 from duckduckpy import query
 import wikipedia
+import re, urllib
+import pandas as pd
+from bs4 import BeautifulSoup
+from urllib import urlopen
 
 app = Flask(__name__)
 
@@ -78,6 +82,32 @@ bot.setBotPredicate("ethics" ,"I am always trying to stop fights")
 bot.setBotPredicate("emotions", "I don't pay much attention to my feelings")
 bot.setBotPredicate("feelings"," I always put others before myself")
 
+def scrape_and_parse(query):
+    site = urlopen("http://duckduckgo.com/html/?q="+query)
+    data = site.read()
+    soup = BeautifulSoup(data, "html.parser")
+
+    my_list = soup.find("div", {"id": "links"}).find_all("div", {'class': re.compile('.*web-result*.')})[0:15]
+
+    (result__snippet, result_url) = ([] for i in range(2))
+
+    for i in my_list:         
+        try:
+                result__snippet.append(i.find("a", {"class": "result__snippet"}).get_text().strip("\n").strip())
+        except:
+                result__snippet.append(None)
+        try:
+                result_url.append(i.find("a", {"class": "result__url"}).get_text().strip("\n").strip())
+        except:
+                result_url.append(None)
+
+    final_result = '-'.join(result__snippet)
+
+    return final_result         
+
+
+
+
 def parse_message(answer):
     if("..." in answer):
         answer = answer + "wait! Are you testing me?!?!"
@@ -91,8 +121,9 @@ def parse_message(answer):
     if ("I do not know" in result):
         parsed = str(answer.split('is')[1])
         parsed = parsed.split('?')[0]
-        parsed = parsed.replace(' ','')
-        result = wikipedia.summary(parsed)
+        # parsed = parsed.replace(' ','')
+        # result = wikipedia.summary(parsed)
+        result = scrape_and_parse(parsed)
 
     return result
 
