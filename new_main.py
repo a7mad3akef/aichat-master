@@ -7,6 +7,20 @@ import re, urllib
 import pandas as pd
 from bs4 import BeautifulSoup
 from urllib import urlopen
+import string
+import wordcloud
+import numpy as np
+from wordcloud import WordCloud, STOPWORDS 
+from nltk.corpus import stopwords
+from nltk.tokenize import word_tokenize
+from sklearn.datasets import fetch_20newsgroups
+from nltk.stem import PorterStemmer
+from nltk.tokenize import RegexpTokenizer
+import nltk
+from collections import Counter
+from sklearn.feature_extraction.text import CountVectorizer, TfidfVectorizer
+from sklearn.decomposition import LatentDirichletAllocation
+import lda
 
 app = Flask(__name__)
 
@@ -82,6 +96,63 @@ bot.setBotPredicate("ethics" ,"I am always trying to stop fights")
 bot.setBotPredicate("emotions", "I don't pay much attention to my feelings")
 bot.setBotPredicate("feelings"," I always put others before myself")
 
+
+def textprocessing(text):
+    text = str(text)
+    stemmer = PorterStemmer()
+    re_sp= re.sub(r'\s*(?:([^a-zA-Z0-9._\s "])|\b(?:[a-z])\b)'," ",text.lower())
+    text = re.sub("[!@#$%\n^'*)\\(-=]"," ", re_sp)
+    no_char = ' '.join( [w for w in text.split() if len(w)>3]).strip()
+    filtered_sp = [w for w in no_char.split(" ") if not w in stopwords.words('english')]
+    stemmed_sp = [stemmer.stem(item) for item in filtered_sp]
+    filtered_sp = ' '.join([x for x in filtered_sp])
+    return filtered_sp
+
+
+def count_and_lda(text):
+    top_N = 20
+
+    words = nltk.tokenize.word_tokenize(text)
+    word_dist = nltk.FreqDist(words)
+
+    stopwords = nltk.corpus.stopwords.words('english')
+    words_except_stop_dist = nltk.FreqDist(w for w in words if w not in stopwords) 
+
+    rslt = pd.DataFrame(word_dist.most_common(top_N),
+                        columns=['Word', 'Frequency'])
+
+    rslt = pd.DataFrame(words_except_stop_dist.most_common(top_N),
+                        columns=['Word', 'Frequency']).set_index('Word')
+
+    counts = Counter(words).most_common(20)
+
+    # print counts
+
+    vectorizer = TfidfVectorizer()
+    dtm_tfidf = vectorizer.fit_transform(words)
+    # print(dtm_tfidf.shape)
+
+    lda_tfidf = LatentDirichletAllocation(n_components=10,learning_offset=50, max_iter=10)
+    lda_tfidf.fit(dtm_tfidf)
+
+    tf_vectorizer = CountVectorizer(max_df=0.95, min_df=2, max_features=500, stop_words='english')
+    tf = tf_vectorizer.fit_transform(words)
+    vocab = tf_vectorizer.get_feature_names()
+
+    model = lda.LDA(n_topics=20, n_iter=2000, random_state=1)
+    model.fit(tf)
+
+    topic_word = model.topic_word_
+    n = 5
+    topics = []
+    for i, topic_dist in enumerate(topic_word):
+        topic_words = np.array(vocab)[np.argsort(topic_dist)][:-(n+1):-1]
+        # print('*Topic {}\n- {}'.format(i, ', '.join(topic_words)))
+        topics.append(', '.join(topic_words))
+
+    return topics,counts 
+
+
 def scrape_and_parse(query):
     site = urlopen("http://duckduckgo.com/html/?q="+query)
     data = site.read()
@@ -101,7 +172,7 @@ def scrape_and_parse(query):
         except:
                 result_url.append(None)
 
-    final_result = '\n'.join(result__snippet)
+    final_result = '<br>'.join(result__snippet).encode('utf-8').strip()
 
     return final_result         
 
@@ -119,13 +190,16 @@ def parse_message(answer):
     else:
         result = bot.respond(answer)
     
-    
+
     if ("I do not know" in result):
         parsed = str(answer.split('is')[1])
         parsed = parsed.split('?')[0]
         # parsed = parsed.replace(' ','')
         # result = wikipedia.summary(parsed)
         result = scrape_and_parse(parsed)
+        print result
+        text = textprocessing(result)
+        print count_and_lda(text)
 
     return result
 
