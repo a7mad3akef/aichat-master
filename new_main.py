@@ -150,7 +150,12 @@ def count_and_lda(text):
         # print('*Topic {}\n- {}'.format(i, ', '.join(topic_words)))
         topics.append(', '.join(topic_words))
 
-    return topics,counts 
+    the_counts = []
+    for count in counts:
+        the_counts.append({'data':count[0], 'value':count[1]})
+        
+
+    return topics,the_counts 
 
 
 def scrape_and_parse(query):
@@ -190,25 +195,27 @@ def parse_message(answer):
     else:
         result = bot.respond(answer)
     
-
+    topics = []
+    the_counts = []
     if ("I do not know" in result):
         parsed = str(answer.split('is')[1])
         parsed = parsed.split('?')[0]
         # parsed = parsed.replace(' ','')
         # result = wikipedia.summary(parsed)
         result = scrape_and_parse(parsed)
-        print result
+        # print result
         text = textprocessing(result)
-        print count_and_lda(text)
-
-    return result
+        topics,the_counts = count_and_lda(text)
+        
+    all_data = {'result':result, 'topics':topics, 'the_counts':the_counts}
+    return all_data
 
 @app.route('/ask', methods=['GET', 'POST'])
 def parse_request():
     message =  str(request.form['message'])
-    parsed = parse_message(message)
+    all_data = parse_message(message)
     # query_result = wikipedia.summary(parsed)
-    return jsonify({ 'answer': parsed})
+    return jsonify({ 'answer': all_data})
 
 if __name__ == "__main__":
     app.run(debug=False)    

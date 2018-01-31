@@ -36,13 +36,17 @@
             tr:nth-child(even) {background-color: #f2f2f2;}
         
         </style>
+
+       
+
+        
     </head>
     <body>
         <div class="container">
             <div class="row">
                 <h1 class="text-center">ALICE CHATBOT</h1>
 
-                <div class="col-md-4">
+                <div class="col-md-5">
                     <div id="chatPanel" class="panel panel-info">
                         <div class="panel-heading">
                             <strong><span class="glyphicon glyphicon-list"></span> Chat History</strong>
@@ -64,47 +68,14 @@
                     </div>
                 </div>
 
-                <div class="col-md-8">
-                    <h2>Word Frequency</h2>
+                <div class="col-md-7">
+                    <div id='wordcloud'></div>
                     <div id="theSvg"></div>
-                    <h2>LDA results</h2>
-                    <table>
+                    <table id="the_topics">
                         <tr>
-                          <th>first</th>
-                          <th>second</th>
-                          <th>third</th>
-                          <th>fourth</th>
-                          <th>fifth</th>
-
+                          <th>Topics</th>
                         </tr>
-                        <tr>
-                          <td>decentralized</td>
-                          <td>discussion</td>
-                          <td>works</td>
-                          <td>worldwide</td>
-                          <td>ecosystem</td>
-                        </tr>
-                        <tr>
-                            <td>decentralized</td>
-                            <td>discussion</td>
-                            <td>works</td>
-                            <td>worldwide</td>
-                            <td>ecosystem</td>
-                        </tr>
-                        <tr>
-                            <td>decentralized</td>
-                            <td>discussion</td>
-                            <td>works</td>
-                            <td>worldwide</td>
-                            <td>ecosystem</td>
-                        </tr>
-                        <tr>
-                            <td>decentralized</td>
-                            <td>discussion</td>
-                            <td>works</td>
-                            <td>worldwide</td>
-                            <td>ecosystem</td>
-                        </tr>
+                        
                       </table>
                 </div>
             </div>
@@ -112,7 +83,104 @@
 
         <script src="http://code.jquery.com/jquery-1.12.4.min.js"></script>
         <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.6/js/bootstrap.min.js"></script>
+        
         <script>
+        var table_topics = function(topics){
+            console.log(topics);
+            if (topics.length > 0 ){
+                for (i = 0; i < topics.length; i++) { 
+                    $("#the_topics").append('<tr><td>'+topics[i]+'</td></tr>');
+                }
+             
+            }    
+        }
+
+        var the_word_cloud = function(data){
+            
+            var word_cloud = []
+            for (i = 0; i < data.length; i++) { 
+                word_cloud.push({text : data[i].data, size: data[i].value}) ;
+            }
+            console.log(word_cloud)
+            if (word_cloud.length > 0 ){
+                d3.wordcloud()
+                .size([800, 400])
+                .selector('#wordcloud')
+                .words(word_cloud)
+                .start();
+
+
+
+                var margin = {top: 20, right: 20, bottom: 70, left: 40},
+                width = 600 - margin.left - margin.right,
+                height = 300 - margin.top - margin.bottom;
+            
+            // Parse the data / time
+           
+            
+            var x = d3.scale.ordinal().rangeRoundBands([0, width], .05);
+            
+            var y = d3.scale.linear().range([height, 0]);
+            
+            var xAxis = d3.svg.axis()
+                .scale(x)
+                .orient("bottom")
+                .ticks(10);
+            
+            var yAxis = d3.svg.axis()
+                .scale(y)
+                .orient("left")
+                .ticks(10);
+            
+            var svg = d3.select("#theSvg").append("svg")
+                .attr("width", width + margin.left + margin.right)
+                .attr("height", height + margin.top + margin.bottom)
+              .append("g")
+                .attr("transform", 
+                      "translate(" + margin.left + "," + margin.top + ")");
+            
+            var data = data
+            
+                data.forEach(function(d) {
+                    d.data = d.data;
+                    d.value = +d.value;
+                });
+                
+              x.domain(data.map(function(d) { return d.data; }));
+              y.domain([0, d3.max(data, function(d) { return d.value; })]);
+            
+              svg.append("g")
+                  .attr("class", "x axis")
+                  .attr("transform", "translate(0," + height + ")")
+                  .call(xAxis)
+                .selectAll("text")
+                  .style("text-anchor", "end")
+                  .attr("dx", "-.8em")
+                  .attr("dy", "-.55em")
+                  .attr("transform", "rotate(-90)" );
+            
+              svg.append("g")
+                  .attr("class", "y axis")
+                  .call(yAxis)
+                .append("text")
+                  .attr("transform", "rotate(-90)")
+                  .attr("y", 6)
+                  .attr("dy", ".71em")
+                  .style("text-anchor", "end")
+                  
+              svg.selectAll("bar")
+                  .data(data)
+                .enter().append("rect")
+                  .style("fill", "steelblue")
+                  .attr("x", function(d) { return x(d.data); })
+                  .attr("width", x.rangeBand())
+                  .attr("y", function(d) { return y(d.value); })
+                  .attr("height", function(d) { return height - y(d.value); });
+            
+            
+            }
+            
+        };    
         $(function() {
             $('#chatbot-form-btn').click(function(e) {
                 e.preventDefault();
@@ -133,9 +201,11 @@
                     data: {'message':message},
                     success: function(response) {
                         $('#messageText').val('');
-                        var answer = response.answer;
+                        var answer = response.answer.result;
                         const chatPanel = document.getElementById("chatPanel");
                         $(".media-list").append('<li class="media"><div class="media-body"><div class="media"><div class="media-body">' + answer + '<hr/></div></div></div></li>');
+                        the_word_cloud(response.answer.the_counts);
+                        table_topics(response.answer.topics)
 
                     },
                     error: function(error) {
@@ -147,83 +217,17 @@
         </script>
         <script src="http://d3js.org/d3.v3.min.js"></script>
         
-        <script>
-        
-        var margin = {top: 20, right: 20, bottom: 70, left: 40},
-            width = 600 - margin.left - margin.right,
-            height = 300 - margin.top - margin.bottom;
-        
-        // Parse the date / time
-       
-        
-        var x = d3.scale.ordinal().rangeRoundBands([0, width], .05);
-        
-        var y = d3.scale.linear().range([height, 0]);
-        
-        var xAxis = d3.svg.axis()
-            .scale(x)
-            .orient("bottom")
-            .ticks(10);
-        
-        var yAxis = d3.svg.axis()
-            .scale(y)
-            .orient("left")
-            .ticks(10);
-        
-        var svg = d3.select("#theSvg").append("svg")
-            .attr("width", width + margin.left + margin.right)
-            .attr("height", height + margin.top + margin.bottom)
-          .append("g")
-            .attr("transform", 
-                  "translate(" + margin.left + "," + margin.top + ")");
-        
-        var data = [
-        {date:'bitcoin', value:56},
-        {date:'peer', value:8},
-        {date:'news', value:7},
-        {date:'cuurency', value:7}
-        ]
-        
-            data.forEach(function(d) {
-                d.date = d.date;
-                d.value = +d.value;
-            });
-            
-          x.domain(data.map(function(d) { return d.date; }));
-          y.domain([0, d3.max(data, function(d) { return d.value; })]);
-        
-          svg.append("g")
-              .attr("class", "x axis")
-              .attr("transform", "translate(0," + height + ")")
-              .call(xAxis)
-            .selectAll("text")
-              .style("text-anchor", "end")
-              .attr("dx", "-.8em")
-              .attr("dy", "-.55em")
-              .attr("transform", "rotate(-90)" );
-        
-          svg.append("g")
-              .attr("class", "y axis")
-              .call(yAxis)
-            .append("text")
-              .attr("transform", "rotate(-90)")
-              .attr("y", 6)
-              .attr("dy", ".71em")
-              .style("text-anchor", "end")
-              .text("Value ($)");
-        
-          svg.selectAll("bar")
-              .data(data)
-            .enter().append("rect")
-              .style("fill", "steelblue")
-              .attr("x", function(d) { return x(d.date); })
-              .attr("width", x.rangeBand())
-              .attr("y", function(d) { return y(d.value); })
-              .attr("height", function(d) { return height - y(d.value); });
         
         
+
+        <script type="text/javascript" src="{{ url_for('static', filename='d3.js') }}"></script>
+        <script type="text/javascript" src="{{ url_for('static', filename='d3.layout.cloud.js') }}"></script>
+        <script type="text/javascript" src="{{ url_for('static', filename='d3.wordcloud.js') }}"></script>
+
+
+    
         
-        </script>
+        
         
     </body>
 </html>
