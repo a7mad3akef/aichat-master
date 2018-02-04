@@ -1,4 +1,4 @@
-from flask import Flask, render_template, request, jsonify
+from flask import Flask, render_template, request, jsonify, send_from_directory
 import aiml
 import os
 from duckduckpy import query
@@ -21,6 +21,10 @@ from collections import Counter
 from sklearn.feature_extraction.text import CountVectorizer, TfidfVectorizer
 from sklearn.decomposition import LatentDirichletAllocation
 import lda
+import pyLDAvis
+import pyLDAvis.sklearn
+from pyLDAvis.sklearn import prepare
+
 
 app = Flask(__name__, static_url_path='')
 
@@ -135,6 +139,9 @@ def count_and_lda(text):
     lda_tfidf = LatentDirichletAllocation(n_components=10,learning_offset=50, max_iter=10)
     lda_tfidf.fit(dtm_tfidf)
 
+    data = prepare(lda_tfidf, dtm_tfidf, vectorizer)
+    pyLDAvis.save_html(data, './static/data.html')
+
     tf_vectorizer = CountVectorizer(max_df=0.95, min_df=2, max_features=500, stop_words='english')
     tf = tf_vectorizer.fit_transform(words)
     vocab = tf_vectorizer.get_feature_names()
@@ -205,6 +212,7 @@ def parse_message(answer):
         result = scrape_and_parse(parsed)
         # print result
         text = textprocessing(result)
+        result = result.split('<br>')[0]
         topics,the_counts = count_and_lda(text)
         
     all_data = {'result':result, 'topics':topics, 'the_counts':the_counts}
@@ -216,6 +224,10 @@ def parse_request():
     all_data = parse_message(message)
     # query_result = wikipedia.summary(parsed)
     return jsonify({ 'answer': all_data})
+
+@app.route('/js/<path:path>')
+def send_js(path):
+    return send_from_directory('static', path)
 
 if __name__ == "__main__":
     app.run(debug=False)    
