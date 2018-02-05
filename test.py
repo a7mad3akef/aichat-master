@@ -133,7 +133,7 @@ import pyLDAvis.sklearn
 from pyLDAvis.sklearn import prepare
 
 
-query = "bitcoin"
+query = "litecoin"
 site = urlopen("http://duckduckgo.com/html/?q="+query)
 data = site.read()
 soup = BeautifulSoup(data, "html.parser")
@@ -158,7 +158,7 @@ for i in my_list:
 # print result__snippet
 final_result = '\n'.join(result__snippet)
 
-text = final_result
+text = final_result.encode('utf-8').strip()
 
 def textprocessing(text):
     text = str(text)
